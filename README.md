@@ -1,2 +1,3 @@
-# tictactoe-online
-Online version of tic tac toe
+# Modules required
+`cookie-parser`
+`express`
