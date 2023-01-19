@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="pl">
+	<head>
+		<script src="/www/main.js" defer></script>
+		<title>TicTacToe Online!</title>
+		<link rel="stylesheet" href="www/login.css">
+		<script>
+			var loginUser = async ()=>{ // Trigger for logging in
+				let username = document.querySelector('#l-username').value;
+				let password = document.querySelector('#l-password').value;
+				let result = await postData('/api/account/login',{user:username,pass:password});
+				if(result.code!=1100) { // Login unsuccessful
+					document.querySelector("#l-errMsg").innerHTML = result.message;
+				}
+				else window.location.href = "/";
+			};
+			var registerUser = async ()=>{ // Trigger for registering
+				let username = document.querySelector('#r-username').value;
+				let password = document.querySelector('#r-password').value;
+				let rpassword = document.querySelector("#r-cpassword").value;
+				if(password!=rpassword) {
+					document.querySelector("#r-errMsg").innerHTML = "Passwords doesn't match";
+					return;
+				}
+				let result = await postData('/api/account/create',{user:username,pass:password});
+				if(result.code!=1000) { // Registering unsuccessful
+					document.querySelector("#r-errMsg").innerHTML = result.message;
+				}
+				else window.location.href = "/";
+			};
+		</script>
+	</head>
+	<body>
+		<div id="top-panel">
+			<h1>TicTacToe</h1>
+			<span>Online version by PeWu</span>
+		</div>
+		<div id="content">
+			<div id="login-form">
+				<h2>Log in</h2><hr>
+				<span>Username:</span><br>
+				<input type="text" id="l-username"><br>
+				<span>Password:</span><br>
+				<input type="password" id="l-password"><br>
+				<button onclick="loginUser()">Login</button><br>
+				<span id="l-errMsg"></span>
+			</div>
+			<div id="register-form">
+				<h2>Register</h2><hr>
+				<span>Username:</span><br>
+				<input type="text" id="r-username"><br>
+				<span>Password:</span><br>
+				<input type="password" id="r-password"><br>
+				<span>Repeat:</span><br>
+				<input type="password" id="r-cpassword"><br>
+				<button onclick="registerUser()">Register</button><br>
+				<span id="r-errMsg"></span>
+			</div>
+		</div>
+		<div id="bottom-panel"></div>
+	</body>
+</html>

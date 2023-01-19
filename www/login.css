@@ -1,0 +1,70 @@
+html {
+	margin: 0px;
+	background-color: #080808;
+	color: #ffffff;
+	font-family:'Franklin Gothic Medium', 'Arial Narrow', Arial, sans-serif;
+	height:100%;
+	cursor:default;
+	user-select:none;
+}
+body {
+	height:100%;
+	margin: 0px;
+}
+input[type='text'],input[type='password'] {
+	background-color:#444444;
+	color:#ffffff;
+	outline:none;
+	font-size:60%;
+	margin:0px 50px;
+	cursor:text;
+	user-select:auto;
+}
+button {
+	filter:invert(1);
+	font-size:90%;
+	cursor:pointer;
+}
+#login-form, #register-form {
+	float:left;
+	text-align:center;
+	border:2px solid gray;
+	font-size:200%;
+	background-color: #181818;
+	overflow:auto;
+	height:500px;
+	width:min-content;
+}
+#login-form hr,#register-form hr {
+	padding-left:50px;
+	padding-right:50px;
+}
+#content {
+	border:3px groove #888888;
+	width:max-content;
+	height:fit-content;
+	padding:10px 70px;
+	transform:translate(-50%,0%);
+	margin-left:50%;
+}
+#content::after {
+	clear:both;
+	content:"";
+	display:block;
+}
+#l-errMsg, #r-errMsg {
+	color:rgb(255, 93, 93);
+	font-size:80%;
+	overflow-wrap: break-word;
+}
+#top-panel {
+	font-size:400%;
+	text-align:center;
+}
+#top-panel h1 {
+	margin:0px;
+}
+#top-panel span {
+	font-family:'Gill Sans', 'Gill Sans MT', Calibri, 'Trebuchet MS', sans-serif;
+	font-style:italic;
+}

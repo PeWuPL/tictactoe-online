@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="pl">
+	<head>
+		<title>TicTacToe Online! - Room</title>
+		<link rel="stylesheet" href="/www/room.css">
+		<script src="/www/main.js" defer></script>
+		<script>
+			var settings = {
+				mode: 1,
+				rounds: 1,
+				visibility: null
+			};
+			var updateInfo = setInterval(async ()=>{
+				let data = await getData("/api/lobby/info");
+				if(data.code == 1403) {
+					//debugger;
+					// alert not works
+					clearInterval(updateInfo);
+					if(!alert("You've got kicked out of the room. Exiting to lobby.")) {
+						setTimeout(()=>{
+							window.location.reload();
+							return;
+						},1000);
+					}
+					else {
+						setTimeout(()=>{
+							window.location.reload();
+							return;
+						},1000);
+					}
+				}
+				let hook = {
+					top: document.querySelector("#top"),
+					left: document.querySelector("#left"),
+					right: document.querySelector("#right"),
+					bottom: document.querySelector("#bottom"),
+				};
+				let newString = `
+				<h3 style="margin:0;text-align:center">Info</h3><hr>
+				<b>Name: </b><span style="float:right">${data.name}#${data.id} (${data.status})</span><br>
+				<b>Host: </b><span style="float:right">${data.host.name}#${data.host.id} ${data.isHost ? "(you)" : ""}</span><br>
+				<b>Guest: </b><span style="float:right">${data.guest ? data.guest.name+"#"+data.guest.id : "<i>No guest</i>"} ${!data.isHost&&data.guest ? "(you)" : ""}</span><br>
+				<b>Mode: </b><span style="float:right">${data.setting}</span><br>
+				<b>Rounds: </b><span style="float:right">${data.roundsTotal}</span><br>
+				${data.isHost ? "<b>Invite code:</b> <span style=\"float:right;user-select:text;cursor:text\">"+data.inviteCode+"</span><br>" : ""}
+				${data.isHost ? "<b>Visibility:</b> <span style=\"float:right\">"+(data.visible ? "Visible":"Not visible")+"</span><br>" : ""}
+				`;
+
+				if(hook.top.innerHTML != newString) 
+				hook.top.innerHTML = newString;
+				if(!data.isHost) {
+					hook.top.style.borderBottom="1px solid white";
+					hook.right.style.borderTop = '0';
+					hook.right.style.width = '100%';
+				}
+				else {
+					hook.left.style.display = "initial";
+					hook.right.style.width = '50%';
+					//hook.bottom.innerHTML = `<button onclick="apply()">Apply changes</button> <button onclick="start()">Start game</button> <button onclick="leave()">Leave room</button>`;
+				}
+				// Update fields on settings
+				if(!data.guest) document.querySelector("#guestKick").disabled = true;
+				else {
+					document.querySelector("#guestKick").disabled = false;
+				}
+				settings.mode = document.querySelector("#modes").value;
+				if(document.querySelector("#rounds").value=="") settings.rounds=1;
+				else settings.rounds = document.querySelector("#rounds").value;
+				// Chat content parsing
+				let chatHook = document.querySelector("#chatOutput");
+				let chat = "";
+				for(let entry of data.chatHistory) {
+					let timeStamp = new Date(entry.timeStamp);
+					let h = timeStamp.getHours(),
+					m = timeStamp.getMinutes(),
+					s = timeStamp.getSeconds(),
+					author = entry.author.name;
+					if(h.toString().length==1) h="0"+h;
+					if(m.toString().length==1) m="0"+m;
+					if(s.toString().length==1) s="0"+s;
+					let chatStr = "";
+					if(author == "<b style='color: red'>SYSTEM</b>") chatStr = `${entry.content}<br>`;
+					else chatStr = `<span class="chatEntry">[${h}:${m}:${s}] <b>${author}</b>: ${entry.content}</span> <br>`;
+					chat+=chatStr;
+				}
+				if(chatHook.innerHTML!=chat) {
+					chatHook.innerHTML = chat;
+					chatHook.scrollTop = chatHook.scrollHeight;
+				}
+				if(settings.visibility == null&&data.isHost) {
+					settings.visibility = data.visible;
+					if(data.visible) document.querySelector("#vis").innerHTML = "Visible";
+					else document.querySelector("#vis").innerHTML = "Invisible";
+					document.querySelector("#rounds").value = data.roundsTotal;
+					hook.bottom.innerHTML = '<button onclick="apply()">Apply changes</button> <button onclick="start()">Start game</button> <button onclick="leave()">Leave room</button>';
+				}
+				if(document.querySelector("#content").style.display == '') {
+					document.querySelector("#content").style.display = "block";
+					document.querySelector("#loading").style.display = "none";
+					document.querySelector("#chatInput").addEventListener("keydown",textEvent,false);
+					chatHook.scrollTop = chatHook.scrollHeight;
+				}
+				
+			},1000);
+			// kickGuest(), switchVisibility(), start(), leave(), sendMsg(), apply()
+			var kickGuest = async ()=>{
+				let process = await getData("/api/lobby/kickGuest");
+				let errHook = document.querySelector("#errMsg");
+				if(process.code != 1700) errHook.innerHTML = process.message;
+				return;
+			};
+			var switchVisibility = ()=>{
+				let vis = document.querySelector("#vis");
+				if(vis.innerHTML=="Invisible") {
+					vis.innerHTML="Visible";
+					settings.visibility = true;
+				}
+				else {
+					vis.innerHTML="Invisible";
+					settings.visibility = false;
+				}
+			};
+			var start = async ()=>{
+				let process = await getData("/api/lobby/start");
+				let errHook = document.querySelector("#errMsg");
+				if(process.code != 2000) {
+					errHook.innerHTML = process.message;
+					return;
+				}
+				window.location.reload();
+			};
+			var leave = async ()=>{
+				let result = await getData("/api/lobby/leave");
+				let errHook = document.querySelector("#errMsg");
+				if(result.code == 1500) {
+					window.location.reload();
+					return;
+				}
+				errHook.innerHTML = result.message; return;
+			};
+			var sendMsg = async ()=>{
+				let cnt = document.querySelector("#chatInput");
+				let out = document.querySelector("#chatOutput");
+				let errHook = document.querySelector("#errMsg");
+				let process = await postData("/api/lobby/chat",{content: cnt.value});
+				if(process.code != 1900) {
+					errHook.innerHTML = process.message;
+					return;
+				}
+				cnt.value = "";
+				setTimeout(()=>{out.scrollTop = out.scrollHeight},1000);
+			};
+			var apply = async ()=>{
+				let sending = await postData("/api/lobby/settings",settings);
+				let errHook = document.querySelector("#errMsg");
+				if(sending.code != 1600) errHook.innerHTML = sending.message;
+			};
+			var textEvent = (key)=>{
+				if(key.keyCode == 13) {
+					sendMsg();
+				}
+			};
+		</script>
+	</head>
+	<body>
+		<div id="top-panel">
+			<h2>Room settings</h2>
+		</div>
+		<div id="loading">
+			<h1>Loading ...</h1>
+			<h4>Please wait</h4>
+		</div>
+		<div id="content">
+			<div id="top">
+				<h3 style='margin:0;text-align:center'>Info</h3><hr>
+			</div>
+			<div id="left">
+				<h3 style='margin:0;text-align:center'>Host Settings</h3>
+				<hr>
+				<div id="options">
+					<span>Guest</span><button id="guestKick" onclick="kickGuest()">Kick guest</button><br>
+					<span>Game mode</span><select id="modes">
+						<option value="1">3x3 (default)</option>
+						<!--<option value="2">4x4</option>-->
+						<!--<option value="3">5x5</option>-->
+					</select><br>
+					<span>Rounds</span><input id="rounds" type="number" min="1" max="99" onKeyUp="if(this.value>99){this.value='99';}else if(this.value<=0){this.value='1';}"><br>
+					<span>Visibility</span><button id="vis" onclick="switchVisibility()">Invisible</button>
+				</div>
+			</div>
+			<div id="right">
+				<h3 style='margin:0;text-align:center'>Chat</h3><hr>
+				<div id="chatOutput"></div>
+				<input type="text" id="chatInput" onkeydown="getKey(this)">
+				<button id="chatSend" onclick="sendMsg()">Send</button>
+			</div>
+			<span id="errMsg"></span><br>
+			<div id="bottom">
+				<button onclick="leave()">Leave room</button>
+			</div>
+		</div>
+		<div id="bottom-panel"></div>
+	</body>
+</html>

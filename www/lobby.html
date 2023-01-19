@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="pl">
+	<head>
+		<title>TicTacToe Online! - Lobby</title>
+		<link rel="stylesheet" href="www/lobby.css">
+		<script src="www/main.js" defer></script>
+		<script>
+			var create = async ()=>{
+				//let name = document.querySelector("#lobbyName").value;
+				let name = prompt("Enter name:");
+				let result = await postData("/api/lobby/new",{name: name});
+				if(result.code == 1200) {
+					window.location.reload();
+					return;
+				}
+				document.querySelector("#errMsg").innerHTML = result.message;
+				return;
+			};
+			var logout = async ()=>{
+				await getData("/api/account/logoff");
+				window.location.reload();
+			};
+			var join = async ()=>{
+				let code = prompt("Input invite code:");
+				let result = await postData("/api/lobby/join",{code: code});
+				let errHook;
+				if(result.code == 1300) {
+					window.location.reload();
+					return;
+				}
+				else errHook = result.message;
+				alert(errHook);
+			};
+			var joinOpen = async (code)=>{
+				let result = await postData("/api/lobby/join",{code: code});
+				let errHook;
+				if(result.code == 1300) {
+					window.location.reload();
+					return;
+				}
+				else errHook= result.message;
+				alert(errHook);
+			};
+			var refresh = async ()=>{
+				let data = await getData("/api/lobby/list");
+				let frame = document.querySelector("#list");
+				frame.innerHTML = "";
+				if(data.length==0) frame.innerHTML = "No rooms available.";
+				for(let i in data) {
+					let record = data[i];
+					frame.innerHTML += 
+`<div class='lobbyRecord'>
+	<div class='lobby'>
+		<div class='leftSide'>
+			<span style='float:left'>#${record.id} - <b>${record.name}</b> (${record.status})</span><br>
+			<br>
+			<span style='float:left'>${record.host.name} vs ${record.guest ? record.guest.name : "<b style='color:gray'>No player </b>"} [${record.points[0]} : ${record.points[1]}]</span>	
+		</div>
+		<div class='rightSide'>
+			<span style='float:right'>Mode: ${record.setting}</span><br>
+			<br>
+			<span style='float:right'>Rounds: ${record.roundsPlayed} / ${record.roundsTotal}</span>	
+		</div>
+	</div>
+	<button class='join' onclick='joinOpen("${record.status == 'open' ? record.inviteCode : "null"}")' ${record.status != 'open' ? "disabled": ""}>Join</button>
+</div>${i==data.length-1 ? "" : "<hr>"}
+	`;
+				}
+			};
+		</script>
+	</head>
+	<body onload="refresh()">
+		<div id="top-panel">
+			<h1 style="margin:0px;text-align: center">Lobby</h1>
+		</div>
+		<div id="content">
+			<div id="ops">
+				<hr>
+				<button onclick="create()">Create new</button>
+				<button onclick="join()">Join</button><hr>
+				<!--<input type="text" placeholder="Lobby name" id="lobbyName">-->
+				<button onclick="refresh()">Refresh</button>
+				<button onclick="logout()">Log out</button>
+				<br>
+				<span id='errMsg'></span><hr>
+			</div>
+			<div id="list"></div>
+		</div>
+	</body>
+</html>
